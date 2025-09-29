@@ -7,7 +7,6 @@ int compare_ints(const void* a, const void* b){
     return (*(int*)a - *(int*)b);
 }
 
-// Merge dos arrays ordenados: a1 (size n1), a2 (size n2) → result
 int* merge(int* a1, int n1, int* a2, int n2){
     int* result = malloc((n1+n2)*sizeof(int));
     int i=0, j=0, k=0;
@@ -68,7 +67,6 @@ int main(int argc, char* argv[]){
                 int* recv_keys = malloc(recv_n * sizeof(int));
                 MPI_Recv(recv_keys, recv_n, MPI_INT, partner, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-                // Merge
                 int* merged = merge(current_keys, current_n, recv_keys, recv_n);
                 free(current_keys);
                 free(recv_keys);
