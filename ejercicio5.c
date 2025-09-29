@@ -17,33 +17,27 @@ int main(int argc, char* argv[]) {
         fflush(stdout);
         scanf("%d", &n);
 
-        // Reservar memoria
         A = malloc(n * n * sizeof(double));
         x = malloc(n * sizeof(double));
         y = malloc(n * sizeof(double));
 
-        // Llenar matriz y vector con datos simples
         for (int i = 0; i < n; i++)
             for (int j = 0; j < n; j++)
-                A[i*n + j] = 1.0;  // ejemplo simple: matriz llena de 1’s
+                A[i*n + j] = 1.0;
 
         for (int i = 0; i < n; i++)
-            x[i] = 1.0;  // vector lleno de 1’s
+            x[i] = 1.0; 
     }
 
-    // Broadcast del tamaño n
     MPI_Bcast(&n, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     local_cols = n / comm_sz;
 
-    // Buffers locales
     local_A = malloc(n * local_cols * sizeof(double));
     local_x = malloc(local_cols * sizeof(double));
-    local_y = calloc(n, sizeof(double)); // inicializado en 0
+    local_y = calloc(n, sizeof(double)); 
 
-    // Scatter columnas de A
     if (my_rank == 0) {
-        // Enviar bloques de columnas
         for (int p = 0; p < comm_sz; p++) {
             if (p == 0) {
                 for (int j = 0; j < local_cols; j++)
@@ -52,7 +46,6 @@ int main(int argc, char* argv[]) {
                 for (int j = 0; j < local_cols; j++)
                     local_x[j] = x[j];
             } else {
-                // Extraer bloque para el proceso p
                 double *send_blockA = malloc(n * local_cols * sizeof(double));
                 double *send_blockx = malloc(local_cols * sizeof(double));
 
@@ -75,21 +68,18 @@ int main(int argc, char* argv[]) {
         MPI_Recv(local_x, local_cols, MPI_DOUBLE, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
     }
 
-    // Calcular y_local = A_local * x_local
     for (int i = 0; i < n; i++) {
         for (int j = 0; j < local_cols; j++) {
             local_y[i] += local_A[i*local_cols + j] * local_x[j];
         }
     }
 
-    // Reducir los resultados parciales
     if (my_rank == 0) {
         MPI_Reduce(MPI_IN_PLACE, local_y, n, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     } else {
         MPI_Reduce(local_y, NULL, n, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
     }
 
-    // Imprimir resultado en proceso 0
     if (my_rank == 0) {
         printf("Resultado y = [ ");
         for (int i = 0; i < n; i++)
